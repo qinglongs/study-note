@@ -1,20 +1,18 @@
-### diff 算法简介
+### diff
 
-> diff发生的算法发生的时机，在fiber节点对比更新阶段
+> 简介
 
-> 为什么有react-diff 
-
-- 高效的diff算法可以让用户无所顾忌性能问题任性自由的刷新页面，并且也无需关心Virtual DOM背后的运作原理
-- 传统diff算法时间复杂度O(n^3),react-diff算法时间复杂度O(n)。
-
-> 比较对象
-- 比较对象: fiber对象与ReactElement对象比较
+- 什么阶段执行：
+  - diff 发生的算法发生在 fiber 节点对比更新阶段。
+- 比较对象：
+  - 旧的 fiber 对象与 新的 ReactElement 对象比较
+- 性能：
+  - 时间复杂度为 O(n)
 
 > 单节点比较
-- 如果是新增节点，直接新建fiber
-- 如果是对比更新
-    - 如果key和type相同(即：ReactElemnt.key===Fiber.key)且ReactElment.type===Fiber.type 则复用
-    - 不满足上面一点就是新增。
+
+- 如果 key 和 type 相同(即：ReactElemnt.key===Fiber.key)且 ReactElment.type===Fiber.type 则复用。
+- 不满足上面一点就是新增。
 
 ```js
 // 只保留主干逻辑
@@ -22,7 +20,7 @@ function reconcileSingleElement(
   returnFiber: Fiber,
   currentFirstChild: Fiber | null,
   element: ReactElement,
-  lanes: Lanes,
+  lanes: Lanes
 ): Fiber {
   const key = element.key;
   let child = currentFirstChild;
@@ -76,14 +74,14 @@ function reconcileChildFibers(
   returnFiber: Fiber,
   currentFirstChild: Fiber | null,
   newChild: any,
-  lanes: Lanes,
+  lanes: Lanes
 ): Fiber | null {
   if (isArray(newChild)) {
     return reconcileChildrenArray(
       returnFiber,
       currentFirstChild,
       newChild,
-      lanes,
+      lanes
     );
   }
   if (getIteratorFn(newChild)) {
@@ -91,17 +89,16 @@ function reconcileChildFibers(
       returnFiber,
       currentFirstChild,
       newChild,
-      lanes,
+      lanes
     );
   }
 }
-
 
 function reconcileChildrenArray(
   returnFiber: Fiber,
   currentFirstChild: Fiber | null,
   newChildren: Array<*>,
-  lanes: Lanes,
+  lanes: Lanes
 ): Fiber | null {
   let resultingFirstChild: Fiber | null = null;
   let previousNewFiber: Fiber | null = null;
@@ -137,10 +134,16 @@ function reconcileChildrenArray(
 
   if (shouldTrackSideEffects) {
     // newChildren已经遍历完, 那么oldFiber序列中剩余节点都视为删除(打上Deletion标记)
-    existingChildren.forEach(child => deleteChild(returnFiber, child));
+    existingChildren.forEach((child) => deleteChild(returnFiber, child));
   }
 
   return resultingFirstChild;
 }
-
 ```
+
+### Hooks 原理简介
+
+> hook 与 fiber 节点的关系
+
+- 在 fiber 节点构造阶段，会调用函数组件内部的 hook 函数，并根据 hook 调用顺序挂载在 fiber 节点上面。
+-
