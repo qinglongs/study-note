@@ -7,9 +7,9 @@
 - 比较对象：
   - 旧的 fiber 对象与 新的 ReactElement 对象比较
 - 性能：
-  - 时间复杂度为 O(n)
--目的 
-  diff的过程中再fiber给fiber节点打上标记，等待commit阶段的处理。
+  - 时间复杂度为 O(n);
+- 目的:
+  - diff 的过程中给 fiber 节点打上标记(增、删改)，等待 commit 阶段的处理。
 
 > 单节点比较
 
@@ -70,15 +70,16 @@ function reconcileSingleElement(
 > 可迭代节点比较
 
 - 多节点比较过程(会经历两次遍历)
-  
+
   - 第一次遍历：遍历最长公共序列(key 相同), 公共序列的节点都视为可复用
-    - 如果newChildren序列被遍历完, 那么oldFiber序列中剩余节点都视为删除(打上Deletion标记)
-    - 如果oldFiber序列被遍历完, 那么newChildren序列中剩余节点都视为新增(打上Placement标记)
-  
+
+    - 如果 newChildren 序列被遍历完, 那么 oldFiber 序列中剩余节点都视为删除(打上 Deletion 标记)
+    - 如果 oldFiber 序列被遍历完, 那么 newChildren 序列中剩余节点都视为新增(打上 Placement 标记)
+
   - 第二次遍历：遍历剩余非公共序列, 优先复用 oldFiber 序列中的节点
     - 如果有节点发生了位移就打上新增标记。
     - 有新的节点出现也会打上新增标记。
-    - oldFiber序列中剩余的节点打上删除标记。
+    - oldFiber 序列中剩余的节点打上删除标记。
 
 ```js
 function reconcileChildrenArray(
@@ -131,18 +132,21 @@ function reconcileChildrenArray(
 ### Hooks 原理简介
 
 > hook 与 fiber 节点的关系
-- 属于fiber节点上面的一个属性，hook对象是一个单向链表
-- useState的执行流程
-  
+
+- 属于 fiber 节点上面的一个属性，hook 对象是一个单向链表
+- useState 的首次渲染和更新阶段代码执行过程
+
   - 首次渲染执行步骤
-    - 构建fiber ->  执行hook函数 -> 创建hook对象 -> 将初始状态赋值到hook对象 -> 将hook对象挂载到fiber节点下 -> 等待commit阶段的更新
-  
+
+    - 构建 fiber -> 执行 hook 函数 -> 创建 hook 对象 -> 将初始状态赋值到 hook 对象 -> 将 hook 对象挂载到 fiber 节点下 -> 等待 commit 阶段的更新
+
   - 更新阶段执行步骤
-    - 执行dispatch函数-> 将新的状态添加到hook对象的queue队列中 -> 触发react调度 -> 注册调度任务 -> 调度任务的回调执行 -> 构造fiber树 -> 执行对应的hook函数 -> 计算出最新状态并赋值到hook对象 -> 等待commit阶段执行
-#### hook对象
+    - 执行 dispatch 函数-> 将新的状态添加到对应 hook 节点的 queue 队列中 -> 触发 react 调度 -> 注册调度任务 -> 调度任务的回调执行 -> 构造 fiber 树 -> 执行对应的 hook 函数 -> 计算出最新状态并赋值到 hook 对象 -> 等待 commit 阶段执行
+
+> hook 对象
 
 ```javascript
- export type Hook = {|
+export type Hook = {|
   memoizedState: any,
   baseState: any,
   baseQueue: Update<any, any> | null,
@@ -161,13 +165,35 @@ type Update<S, A> = {|
 
 type UpdateQueue<S, A> = {|
   pending: Update<S, A> | null,
-  dispatch: (A => mixed) | null,
+  dispatch: ((A) => mixed) | null,
   lastRenderedReducer: ((S, A) => S) | null,
   lastRenderedState: S | null,
 |};
+
+// 执行上下文
+type ExecutionContext = number;
+export const NoContext = /*             */ 0b0000000;
+const BatchedContext = /*               */ 0b0000001;
+
+// 触发事件
+const EventContext = /*                 */ 0b0000010;
+const DiscreteEventContext = /*         */ 0b0000100;
+
+const LegacyUnbatchedContext = /*       */ 0b0001000;
+// render 前会进入这个上下文
+const RenderContext = /*                */ 0b0010000;
+// commit之前
+const CommitContext = /*                */ 0b0100000;
 ```
 
-> hooks相关问题，为什么在hooks中操作同一个引用不会触发页面刷新
+> hooks 相关小问题
+
+- setState 是同步的还是异步的？
+- 如果逻辑进入 flushSyncCallbackQueue(executionContext === NoContext), 则会主动取消调度, 立即进入 fiber 树构造过程. 当执行 setState 下一行代码时, fiber 树已经重新渲染了, 故 setState 体现为同步。
+- 正常情况下, 不会取消 schedule 调度. 由于 schedule 调度是通过 MessageChannel 触发(宏任务), 故体现为异步？
+- 同时执行多个 setState 会触发多次更新吗？
+- 为什么 setState 相等的值不会触发页面重新渲染？
+- hooks 是怎样实现状态复用的(双缓冲技术)
 
 ```js
 function dispatchAction(fiber, queue, action) {
@@ -198,11 +224,11 @@ function dispatchAction(fiber, queue, action) {
 
 
   if (fiber === currentlyRenderingFiber$1 || alternate !== null && alternate === currentlyRenderingFiber$1) {
-    // 这是一个渲染阶段更新。 将其隐藏在一个惰性创建的queue ->更新链表映射中。 在渲染结束后，我们将重新启动并在work-in-progress钩子上应用存储的更新。  
+    // 这是一个渲染阶段更新。 将其隐藏在一个惰性创建的queue ->更新链表映射中。 在渲染结束后，我们将重新启动并在work-in-progress钩子上应用存储的更新。
     didScheduleRenderPhaseUpdateDuringThisPass = didScheduleRenderPhaseUpdate = true;
   } else {
     if (fiber.lanes === NoLanes && (alternate === null || alternate.lanes === NoLanes)) {
-      // 队列目前是空的，这意味着我们可以在进入渲染阶段之前急切地计算下一个状态。 如果新状态与当前状态相同，我们或许能够完全摆脱困境。  
+      // 队列目前是空的，这意味着我们可以在进入渲染阶段之前急切地计算下一个状态。 如果新状态与当前状态相同，我们或许能够完全摆脱困境。
       var lastRenderedReducer = queue.lastRenderedReducer;
       if (lastRenderedReducer !== null) {
         var prevDispatcher;
@@ -224,11 +250,10 @@ function dispatchAction(fiber, queue, action) {
             return;
           }
     }
-
     scheduleUpdateOnFiber(fiber, lane, eventTime);
   }
 }
 
 ```
 
-> setState是同步还是异步的
+#### useState 与 diff 之间的关系
