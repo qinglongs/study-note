@@ -17,6 +17,17 @@
 - 如果 key 和 type 相同(即：ReactElemnt.key===Fiber.key)且 ReactElment.type===Fiber.type 则复用，否则新增。
 
 ```js
+
+//  fiber.flags 标记记录在commit阶段可以用整个字段精确判断需要进行的副作用操作
+// 新增
+export const Placement = /*                    */ 0b0000000000000000000000010;
+// 更新
+export const Update = /*                       */ 0b0000000000000000000000100;
+// 新增并且更新
+export const PlacementAndUpdate = /*           */ Placement | Update;
+// 删除
+export const Deletion = /*                     */ 0b0000000000000000000001000;
+
 // 只保留主干逻辑
 function reconcileSingleElement(
   returnFiber: Fiber,
@@ -83,10 +94,17 @@ function reconcileSingleElement(
     - oldFiber 序列中剩余的节点打上删除标记。
 
 ```js
+/*
+@
+*/
 function reconcileChildrenArray(
+  // 夫节点对应的fiber对象
   returnFiber: Fiber,
+  // 第一个子节点对应的fiber
   currentFirstChild: Fiber | null,
+  // 调用组件生成的新的 ReactElement 数组
   newChildren: Array<*>,
+  // 优先级
   lanes: Lanes
 ): Fiber | null {
   let resultingFirstChild: Fiber | null = null;
@@ -134,7 +152,7 @@ function reconcileChildrenArray(
 
 > hook 与 fiber 节点的关系
 
-- 属于 fiber 节点上面的一个属性，hook 对象是一个单向链表
+- 属于 fiber 节点上面的一个属性，hook 对象是一个单向链表(单向链表的结构是什么样的？)
 - useState 的首次渲染和更新阶段代码执行过程
 
   - 首次渲染执行步骤
@@ -187,11 +205,9 @@ const RenderContext = /*                */ 0b0010000;
 const CommitContext = /*                */ 0b0100000;
 ```
 
-> hooks 相关小问题
+>  hooks 相关小问题
 
 - setState 是同步的还是异步的？
-- 如果逻辑进入 flushSyncCallbackQueue(executionContext === NoContext), 则会主动取消调度, 立即进入 fiber 树构造过程. 当执行 setState 下一行代码时, fiber 树已经重新渲染了, 故 setState 体现为同步。
-- 正常情况下, 不会取消 schedule 调度. 由于 schedule 调度是通过 MessageChannel 触发(宏任务), 故体现为异步？
 - 同时执行多个 setState 会触发多次更新吗？
 - 为什么 setState 相等的值不会触发页面重新渲染？
 - hooks 是怎样实现状态复用的(双缓冲技术)
