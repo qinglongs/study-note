@@ -3,14 +3,13 @@
 > 简介
 
 - 什么阶段执行：
-  - diff 发生的算法发生在 fiber 节点对比更新阶段。
+  - diff 发生的算法发生在 fiber 节点对比更新(beginWork)阶段。
 - 比较对象：
   - 旧的 fiber 对象与 新的 ReactElement 对象比较
 - 性能：
   - 时间复杂度为 O(n);
 - 目的:
-- 给新增,移动,和删除节点设置 fiber.falgs(新增：Placement, 移动：PlacementAndUpdate , 删除: Deletion)。
-- 如果是需要删除的 fiber, 除了自身打上 Deletion 之外, 还要将其添加到父节点的 effects 链表中(正常副作用队列的处理是在 completeWork 函数, 但是该节点(被删除)会脱离 fiber 树, 不会再进入 completeWork 阶段, 所以在 beginWork 阶段提前加入副作用队列).
+- 给新增,移动,和删除节点设置 fiber.falgs(新增：Placement, 移动：PlacementAndUpdate , 删除: Deletion)。 如果是需要删除的 fiber, 除了自身打上 Deletion 之外, 还要将其添加到父节点的 effects 链表中(正常副作用队列的处理是在 completeWork 函数, 但是该节点(被删除)会脱离 fiber 树, 不会再进入 completeWork 阶段, 所以在 beginWork 阶段提前加入副作用队列).
 
 - diff 小问题
   - 节点的 key 有什么作用？
@@ -37,7 +36,9 @@ function reconcileSingleElement(
   element: ReactElement,
   lanes: Lanes
 ): Fiber {
+  // 新的ReactElement节点对应的key
   const key = element.key;
+  // oldFiber
   let child = currentFirstChild;
 
   while (child !== null) {
@@ -59,7 +60,7 @@ function reconcileSingleElement(
           break;
         }
       }
-      // Didn't match. 给当前节点点打上Deletion标记
+      // Didn't match. 给当前节点打上Deletion标记
       deleteRemainingChildren(returnFiber, child);
       break;
     } else {
@@ -196,6 +197,7 @@ type ExecutionContext = number;
 export const NoContext = /*             */ 0b0000000;
 const BatchedContext = /*               */ 0b0000001;
 
+// https://blog.csdn.net/weixin_43294413/article/details/103512328
 // 触发事件
 const EventContext = /*                 */ 0b0000010;
 const DiscreteEventContext = /*         */ 0b0000100;
