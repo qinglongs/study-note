@@ -33,3 +33,65 @@ const Home = () => {
 ```
 
 ![同步模块](./1.jpg)![异步模块](./2.jpg)
+
+> setState 同一个引用/值，为什么不会引起更新
+
+```js
+function dispatchAction(fiber, queue, action) {
+
+  // 创建update对象
+  var eventTime = requestEventTime();
+  var lane = requestUpdateLane(fiber);
+  var update = {
+    lane: lane,
+    action: action,
+    eagerReducer: null,
+    eagerState: null,
+    next: null
+  };
+
+
+  var pending = queue.pending;
+  // 将update对象添加到队列的尾部
+  if (pending === null) {
+    // This is the first update. Create a circular list.
+    update.next = update;
+  } else {
+    update.next = pending.next;
+    pending.next = update;
+  }
+  queue.pending = update;
+  var alternate = fiber.alternate;
+
+
+  if (fiber === currentlyRenderingFiber$1 || alternate !== null && alternate === currentlyRenderingFiber$1) {
+    // 这是一个渲染阶段更新。 将其隐藏在一个惰性创建的queue ->更新链表映射中。 在渲染结束后，我们将重新启动并在work-in-progress钩子上应用存储的更新。
+    didScheduleRenderPhaseUpdateDuringThisPass = didScheduleRenderPhaseUpdate = true;
+  } else {
+    if (fiber.lanes === NoLanes && (alternate === null || alternate.lanes === NoLanes)) {
+      // 队列目前是空的，这意味着我们可以在进入渲染阶段之前急切地计算下一个状态。 如果新状态与当前状态相同，我们或许能够完全摆脱困境。
+      var lastRenderedReducer = queue.lastRenderedReducer;
+      if (lastRenderedReducer !== null) {
+        var prevDispatcher;
+          // 上一次 state 的值
+          var currentState = queue.lastRenderedState;
+          // 得到最新的状态
+          var eagerState = lastRenderedReducer(currentState, action); // Stash the eagerly computed state, and the reducer used to compute
+          // it, on the update object. If the reducer hasn't changed by the
+          // time we enter the render phase, then the eager state can be used
+          // without calling the reducer again.
+          update.eagerReducer = lastRenderedReducer;
+          update.eagerState = eagerState;
+
+          if (objectIs(eagerState, currentState)) {
+            // Fast path. We can bail out without scheduling React to re-render.
+            // It's still possible that we'll need to rebase this update later,
+            // if the component re-renders for a different reason and by that
+            // time the reducer has changed.
+            return;
+          }
+    }
+    scheduleUpdateOnFiber(fiber, lane, eventTime);
+  }
+}
+```

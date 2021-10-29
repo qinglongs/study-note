@@ -9,14 +9,14 @@
 - 性能：
   - 时间复杂度为 O(n);
 - 目的:
-- 给新增,移动,和删除节点设置 fiber.falgs(新增：Placement, 移动：PlacementAndUpdate , 删除: Deletion)。 如果是需要删除的 fiber, 除了自身打上 Deletion 之外, 还要将其添加到父节点的 effects 链表中(正常副作用队列的处理是在 completeWork 函数, 但是该节点(被删除)会脱离 fiber 树, 不会再进入 completeWork 阶段, 所以在 beginWork 阶段提前加入副作用队列).
+- 给新增,移动,和删除节点设置 fiber.flags(新增：Placement, 移动：PlacementAndUpdate , 删除: Deletion)。 如果是需要删除的 fiber, 除了自身打上 Deletion 之外, 还要将其添加到父节点的 effects 链表中(正常副作用队列的处理是在 completeWork 函数, 但是该节点(被删除)会脱离 fiber 树, 不会再进入 completeWork 阶段, 所以在 beginWork 阶段提前加入副作用队列).
 
 - diff 小问题
   - 节点的 key 有什么作用？
 
 > 单节点比较
 
-- 如果 key 和 type 相同(即：ReactElemnt.key===Fiber.key)且 ReactElment.type===Fiber.type 则复用，否则新增。
+- 如果 key 和 type 相同(即：ReactElement.key===Fiber.key)且 ReactElement.type===Fiber.type 则复用，否则新增。
 
 ```js
 //  fiber.flags 标记记录在commit阶段可以用整个字段精确判断需要进行的副作用操作
@@ -97,9 +97,7 @@ function reconcileSingleElement(
     - oldFiber 序列中剩余的节点打上删除标记。
 
 ```js
-/*
-@
-*/
+// 下面的代码省略了与diff主流程无关的代码
 function reconcileChildrenArray(
   // 夫节点对应的fiber对象
   returnFiber: Fiber,
@@ -110,16 +108,13 @@ function reconcileChildrenArray(
   // 优先级
   lanes: Lanes
 ): Fiber | null {
-  let resultingFirstChild: Fiber | null = null;
-  let previousNewFiber: Fiber | null = null;
-
   let oldFiber = currentFirstChild;
   let lastPlacedIndex = 0;
   let newIdx = 0;
   let nextOldFiber = null;
   // 1. 第一次循环: 遍历最长公共序列(key相同), 公共序列的节点都视为可复用
   for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
-    // 后文分析
+    // 后面分析
   }
 
   if (newIdx === newChildren.length) {
@@ -155,12 +150,11 @@ function reconcileChildrenArray(
 
 > hook 与 fiber 节点的关系
 
-- 属于 fiber 节点上面的一个属性，hook 对象是一个单向链表(单向链表的结构是什么样的？)
+- 属于 fiber 节点上面的一个属性(memoizedState)，hook 对象是一个单向链表.
 - useState 的首次渲染和更新阶段代码执行过程
 
   - 首次渲染执行步骤
-
-    - 构建 fiber -> 执行 hook 函数 -> 创建 hook 对象 -> 将初始状态赋值到 hook 对象 -> 将 hook 对象挂载到 fiber 节点下 -> 等待 commit 阶段的更新
+  - 构建 fiber -> 执行 hook 函数 -> 计算出最新状态并赋值到 hook 对象 -> 等待 commit 阶段执行
 
   - 更新阶段执行步骤
     - 执行 dispatch 函数-> 将新的状态添加到对应 hook 节点的 queue 队列中 -> 触发 react 调度 -> 注册调度任务 -> 调度任务的回调执行 -> 构造 fiber 树 -> 执行对应的 hook 函数 -> 计算出最新状态并赋值到 hook 对象 -> 等待 commit 阶段执行
@@ -202,7 +196,7 @@ const BatchedContext = /*               */ 0b0000001;
 const EventContext = /*                 */ 0b0000010;
 const DiscreteEventContext = /*         */ 0b0000100;
 
-const LegacyUnbatchedContext = /*       */ 0b0001000;
+// const LegacyUnbatchedContext = /*       */ 0b0001000;
 // render 前会进入这个上下文
 const RenderContext = /*                */ 0b0010000;
 // commit之前
@@ -212,69 +206,9 @@ const CommitContext = /*                */ 0b0100000;
 > hooks 相关小问题
 
 - setState 是同步的还是异步的？
+- 为什么 hooks 不能写在条件判断里面？
 - 同时执行多个 setState 会触发多次更新吗？
-- 为什么 setState 相等的值不会触发页面重新渲染？
-- hooks 是怎样实现状态复用的(双缓冲技术)
-
-```js
-function dispatchAction(fiber, queue, action) {
-
-  // 创建update对象
-  var eventTime = requestEventTime();
-  var lane = requestUpdateLane(fiber);
-  var update = {
-    lane: lane,
-    action: action,
-    eagerReducer: null,
-    eagerState: null,
-    next: null
-  };
-
-
-  var pending = queue.pending;
-  // 将update对象添加到队列的尾部
-  if (pending === null) {
-    // This is the first update. Create a circular list.
-    update.next = update;
-  } else {
-    update.next = pending.next;
-    pending.next = update;
-  }
-  queue.pending = update;
-  var alternate = fiber.alternate;
-
-
-  if (fiber === currentlyRenderingFiber$1 || alternate !== null && alternate === currentlyRenderingFiber$1) {
-    // 这是一个渲染阶段更新。 将其隐藏在一个惰性创建的queue ->更新链表映射中。 在渲染结束后，我们将重新启动并在work-in-progress钩子上应用存储的更新。
-    didScheduleRenderPhaseUpdateDuringThisPass = didScheduleRenderPhaseUpdate = true;
-  } else {
-    if (fiber.lanes === NoLanes && (alternate === null || alternate.lanes === NoLanes)) {
-      // 队列目前是空的，这意味着我们可以在进入渲染阶段之前急切地计算下一个状态。 如果新状态与当前状态相同，我们或许能够完全摆脱困境。
-      var lastRenderedReducer = queue.lastRenderedReducer;
-      if (lastRenderedReducer !== null) {
-        var prevDispatcher;
-          // 上一次 state 的值
-          var currentState = queue.lastRenderedState;
-          // 得到最新的状态
-          var eagerState = lastRenderedReducer(currentState, action); // Stash the eagerly computed state, and the reducer used to compute
-          // it, on the update object. If the reducer hasn't changed by the
-          // time we enter the render phase, then the eager state can be used
-          // without calling the reducer again.
-          update.eagerReducer = lastRenderedReducer;
-          update.eagerState = eagerState;
-
-          if (objectIs(eagerState, currentState)) {
-            // Fast path. We can bail out without scheduling React to re-render.
-            // It's still possible that we'll need to rebase this update later,
-            // if the component re-renders for a different reason and by that
-            // time the reducer has changed.
-            return;
-          }
-    }
-    scheduleUpdateOnFiber(fiber, lane, eventTime);
-  }
-}
-
-```
+- setState 同一个引用/值，为什么不会引起更新？
+- hooks 是怎样实现状态复用的？
 
 #### useState 与 diff 之间的关系
