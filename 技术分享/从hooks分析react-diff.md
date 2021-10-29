@@ -9,15 +9,17 @@
 - 性能：
   - 时间复杂度为 O(n);
 - 目的:
- - 给新增,移动,和删除节点设置fiber.falgs(新增, 移动: Placement, 删除: Deletion)。
- - 如果是需要删除的fiber, 除了自身打上Deletion之外, 还要将其添加到父节点的effects链表中(正常副作用队列的处理是在completeWork函数, 但是该节点(被删除)会脱离fiber树, 不会再进入completeWork阶段, 所以在beginWork阶段提前加入副作用队列).
+- 给新增,移动,和删除节点设置 fiber.falgs(新增：Placement, 移动：PlacementAndUpdate , 删除: Deletion)。
+- 如果是需要删除的 fiber, 除了自身打上 Deletion 之外, 还要将其添加到父节点的 effects 链表中(正常副作用队列的处理是在 completeWork 函数, 但是该节点(被删除)会脱离 fiber 树, 不会再进入 completeWork 阶段, 所以在 beginWork 阶段提前加入副作用队列).
+
+- diff 小问题
+  - 节点的 key 有什么作用？
 
 > 单节点比较
 
 - 如果 key 和 type 相同(即：ReactElemnt.key===Fiber.key)且 ReactElment.type===Fiber.type 则复用，否则新增。
 
 ```js
-
 //  fiber.flags 标记记录在commit阶段可以用整个字段精确判断需要进行的副作用操作
 // 新增
 export const Placement = /*                    */ 0b0000000000000000000000010;
@@ -205,7 +207,7 @@ const RenderContext = /*                */ 0b0010000;
 const CommitContext = /*                */ 0b0100000;
 ```
 
->  hooks 相关小问题
+> hooks 相关小问题
 
 - setState 是同步的还是异步的？
 - 同时执行多个 setState 会触发多次更新吗？
