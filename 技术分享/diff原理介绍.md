@@ -27,21 +27,18 @@
 
 > diff 过程图示
 
-- 假设有下面两个序列，那么在fiber树构造过程中就会执行上述两个步骤：
+- 假设有下面两个序列，那么在 fiber 树构造过程中就会执行上述两个步骤：
 
 ![](https://7kms.github.io/react-illustration-series/static/before-traverse.71633a39.png)
 
-- 第一次循环，遍历最长公共序列，复用fiber(A)和fiber(b)。
+- 第一次循环，遍历最长公共序列，复用 fiber(A)和 fiber(b)。
 
 ![](https://7kms.github.io/react-illustration-series/static/traverse1.a0313cc2.png)
 
 - 第二次循环
-  
-  1. 遍历剩余序列，可以发现fiber(E)和fiber(C)发生了位移，给他们打上修改标记。
-  2. fiber(X), fiber(Y)是新增(打上Placement标记).
-  3. fiber(D)节点确定被删除(打上Deletion标记).
+
+  1. 遍历剩余序列，可以发现 fiber(E)和 fiber(C)发生了位移，给他们打上修改标记。
+  2. fiber(X), fiber(Y)是新增(打上 Placement 标记).
+  3. fiber(D)节点确定被删除(打上 Deletion 标记).
 
 ![](https://7kms.github.io/react-illustration-series/static/traverse2.a5a39d1b.png)
-
-
-> diff过程运行时观察。
