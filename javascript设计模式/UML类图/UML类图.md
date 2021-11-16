@@ -1,0 +1,2 @@
+- Unified Modeling Language 统一建模语言
+- UML 包含很多种图，类图只是其中一种

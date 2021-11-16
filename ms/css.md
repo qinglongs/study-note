@@ -1,3 +1,4 @@
+> 选择器，以及选择器的权重
 > BFC 原理
 > 盒模型
 
@@ -31,7 +32,7 @@
     - inline-block + text-align
     - margin: 0 auto
     - table + margin
-    - absuolute + transform
+    - absolute + transform
     - flex + justify-content
     - flex + margin
   - 多块级元素

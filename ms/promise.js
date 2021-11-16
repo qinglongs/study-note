@@ -32,9 +32,10 @@ class IPromise {
       cb(this.value);
       return;
     }
+
     // then方法注册了成功或者失败的回调
     const ret = cb(this.value);
-    // 将then方法的返回值赋值给新的peomise对象的value，从而实现链式调用
+    // 将then方法的返回值赋值给新的promise对象的value，从而实现链式调用
     cb = isSuccess ? params.resolve : params.reject;
     cb(ret);
   }
@@ -52,13 +53,11 @@ class IPromise {
   }
 }
 
-const p = new Promise((resolve, reject) => {
-  resolve("1111");
+const p = new IPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve("1111");
+  }, 4000);
 });
-
-setTimeout(() => {
-  console.log("4", +new Date());
-}, 1);
 
 p.then((res) => {
   console.log("1", +new Date()); // ???
@@ -76,14 +75,3 @@ p.then((res) => {
       console.log("3", reson); // ???
     }
   );
-
-const a = new Promise((resolve, reject) => reject(new Error("1出错了")));
-const b = new Promise((resolve, reject) =>
-  setTimeout(() => {
-    resolve("成功2");
-  }, 100)
-);
-const c = new Promise((resolve, reject) => resolve("成功1"));
-const d = new Promise((resolve, reject) => reject(new Error("2出错了")));
-
-const any = Promise.any([a, b, c, d]);

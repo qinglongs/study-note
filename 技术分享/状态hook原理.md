@@ -3,10 +3,10 @@
 - 作用：
   - 使 function 组件也有能力管理自己的状态。
 - 原理简介：
-  - 调用 useState 创建 hook 对象，将 hook 对象挂载在 fiber 对象上，然后利用 fiber 的双缓冲技术实现状态复用。
+  - 调用 useState 创建 hook 对象，将 hook 对象挂载在 fiber 对象上.
 
 ```jsx
-// hook链表
+// hook对象
 export type Hook = {|
   memoizedState: any,
   baseState: any,
@@ -49,14 +49,17 @@ function Func() {
     // useRef
     memoizedState: null,
     queue: null,
+
     next:{
       // useMemo
       memoizedState:[count,[]],
       queue: null,
+
       next:{
         //  useCallback
         memoizedState:[()=>{ /* todo */ },[]],
         queue: null,
+
         next:{
           // useEffect
           memoizedState:{
@@ -71,6 +74,7 @@ function Func() {
             next: (null: any),
           },
           queue: null,
+          // useLayoutEffect
           next:{
             tag,
             // ()=>{/* useLayoutEffect */ }

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const a = {
+        a: 1,
+        b: "111",
+      };
+
+      Object.defineProperty(a, "a", {
+        enumerable: true,
+        writable: true,
+        configurable: true,
+        get() {
+          console.log("get");
+          return a.a;
+        },
+        set(newVal) {
+          console.log("set");
+          this.a = newVal;
+        },
+      });
+    </script>
+  </body>
+</html>

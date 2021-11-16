@@ -96,5 +96,8 @@
 - commonjs 在运行时确定输入输出变量，es module 在编译时确定
 - commonjs 输出的是值的拷贝，es module 输出的是值的引用
 - commonjs 不允许导出多个变量
+- commonjs 不能再浏览器环境运行，需要经过编译后才能支持。
 
 > event loop 原理，为什么要有 event loop
+
+> promise 原理
